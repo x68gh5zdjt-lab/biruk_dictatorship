@@ -40,7 +40,10 @@ class RatMafiaGame {
             maxHealth: 100,
             invulnerable: false,
             invulnerableTime: 0,
-            damageCooldown: 0
+            damageCooldown: 0,
+            criticalChance: 0,
+            lifestealAmount: 0,
+            multishotCount: 1
         };
         
         this.familyMembers = [];
@@ -53,7 +56,11 @@ class RatMafiaGame {
             goon: { cost: 100, owned: 0, maxLevel: 10 },
             weapon: { cost: 250, owned: 0, maxLevel: 5 },
             speed: { cost: 150, owned: 0, maxLevel: 5 },
-            firerate: { cost: 200, owned: 0, maxLevel: 5 }
+            firerate: { cost: 200, owned: 0, maxLevel: 5 },
+            health: { cost: 300, owned: 0, maxLevel: 5 },
+            critical: { cost: 400, owned: 0, maxLevel: 3 },
+            lifesteal: { cost: 350, owned: 0, maxLevel: 3 },
+            multishot: { cost: 500, owned: 0, maxLevel: 3 }
         };
         
         this.keys = {};
@@ -132,19 +139,26 @@ class RatMafiaGame {
         let dx = 0;
         let dy = 0;
         
-        // Reset movement each frame
-        dx = 0;
-        dy = 0;
-        
         // Check movement keys with proper key detection
         if (this.keys['w'] || this.keys['arrowup']) dy = -this.playerStats.speed;
         if (this.keys['s'] || this.keys['arrowdown']) dy = this.playerStats.speed;
         if (this.keys['a'] || this.keys['arrowleft']) dx = -this.playerStats.speed;
         if (this.keys['d'] || this.keys['arrowright']) dx = this.playerStats.speed;
         
+        // Normalize diagonal movement to prevent faster diagonal speed
+        if (dx !== 0 && dy !== 0) {
+            const factor = 0.707; // 1/sqrt(2) for normalized diagonal movement
+            dx *= factor;
+            dy *= factor;
+        }
+        
         const rect = this.gameArea.getBoundingClientRect();
-        this.playerStats.x = Math.max(0, Math.min(rect.width - 60, this.playerStats.x + dx));
-        this.playerStats.y = Math.max(0, Math.min(rect.height - 60, this.playerStats.y + dy));
+        const newX = this.playerStats.x + dx;
+        const newY = this.playerStats.y + dy;
+        
+        // Apply boundary constraints
+        this.playerStats.x = Math.max(0, Math.min(rect.width - 60, newX));
+        this.playerStats.y = Math.max(0, Math.min(rect.height - 60, newY));
         
         this.player.style.left = this.playerStats.x + 'px';
         this.player.style.top = this.playerStats.y + 'px';
@@ -177,23 +191,37 @@ class RatMafiaGame {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
-        const angle = Math.atan2(mouseY - (this.playerStats.y + 30), mouseX - (this.playerStats.x + 30));
+        const baseAngle = Math.atan2(mouseY - (this.playerStats.y + 30), mouseX - (this.playerStats.x + 30));
         
-        const bullet = {
-            x: this.playerStats.x + 30,
-            y: this.playerStats.y + 30,
-            vx: Math.cos(angle) * 10,
-            vy: Math.sin(angle) * 10,
-            damage: this.playerStats.damage,
-            element: this.createBulletElement(this.playerStats.x + 30, this.playerStats.y + 30)
-        };
+        // Multi-shot: create multiple bullets in a spread pattern
+        const bulletCount = this.playerStats.multishotCount;
+        const spreadAngle = 0.2; // Spread angle between bullets
         
-        this.bullets.push(bullet);
+        for (let i = 0; i < bulletCount; i++) {
+            const angleOffset = (i - (bulletCount - 1) / 2) * spreadAngle;
+            const angle = baseAngle + angleOffset;
+            
+            // Check for critical hit
+            const isCritical = Math.random() < this.playerStats.criticalChance;
+            const damage = isCritical ? this.playerStats.damage * 2 : this.playerStats.damage;
+            
+            const bullet = {
+                x: this.playerStats.x + 30,
+                y: this.playerStats.y + 30,
+                vx: Math.cos(angle) * 10,
+                vy: Math.sin(angle) * 10,
+                damage: damage,
+                isCritical: isCritical,
+                element: this.createBulletElement(this.playerStats.x + 30, this.playerStats.y + 30, isCritical)
+            };
+            
+            this.bullets.push(bullet);
+        }
     }
     
-    createBulletElement(x, y) {
+    createBulletElement(x, y, isCritical = false) {
         const bullet = document.createElement('div');
-        bullet.className = 'bullet';
+        bullet.className = isCritical ? 'bullet critical-bullet' : 'bullet';
         bullet.style.left = x + 'px';
         bullet.style.top = y + 'px';
         this.gameArea.appendChild(bullet);
@@ -224,7 +252,11 @@ class RatMafiaGame {
         if (this.enemySpawnTimer >= this.enemySpawnInterval) {
             this.spawnEnemy();
             this.enemySpawnTimer = 0;
-            this.enemySpawnInterval = Math.max(1000, this.enemySpawnInterval - 10);
+            
+            // Spawn rate based on player level: 2 seconds - 0.1 seconds per level
+            const baseInterval = 2000; // 2 seconds in milliseconds
+            const levelReduction = this.playerStats.level * 100; // 0.1 seconds = 100ms per level
+            this.enemySpawnInterval = Math.max(400, baseInterval - levelReduction); // Minimum 400ms (0.4 seconds)
         }
     }
     
@@ -388,6 +420,13 @@ class RatMafiaGame {
                 if (distance < 30) {
                     enemy.health -= bullet.damage;
                     
+                    // Lifesteal: heal player based on damage dealt
+                    if (this.playerStats.lifestealAmount > 0) {
+                        const healAmount = Math.floor(bullet.damage * this.playerStats.lifestealAmount);
+                        this.playerStats.health = Math.min(this.playerStats.maxHealth, this.playerStats.health + healAmount);
+                        this.updateUI();
+                    }
+                    
                     if (enemy.health <= 0) {
                         this.createHitEffect(enemy.x + 25, enemy.y + 25);
                         this.createXPPopup(enemy.x + 25, enemy.y + 25, enemy.value);
@@ -507,6 +546,23 @@ class RatMafiaGame {
                     this.playerStats.fireRate = Math.max(100, this.playerStats.fireRate - 50);
                     upgrade.cost = Math.floor(upgrade.cost * 1.7);
                     break;
+                case 'health':
+                    this.playerStats.maxHealth += 25;
+                    this.playerStats.health += 25;
+                    upgrade.cost = Math.floor(upgrade.cost * 1.9);
+                    break;
+                case 'critical':
+                    this.playerStats.criticalChance += 0.15; // 15% chance per level
+                    upgrade.cost = Math.floor(upgrade.cost * 2.0);
+                    break;
+                case 'lifesteal':
+                    this.playerStats.lifestealAmount += 0.1; // 10% lifesteal per level
+                    upgrade.cost = Math.floor(upgrade.cost * 1.8);
+                    break;
+                case 'multishot':
+                    this.playerStats.multishotCount += 1;
+                    upgrade.cost = Math.floor(upgrade.cost * 2.2);
+                    break;
             }
             
             this.updateUI();
@@ -515,16 +571,24 @@ class RatMafiaGame {
     
     addFamilyMember() {
         const rect = this.gameArea.getBoundingClientRect();
+        
+        // Generate random position within game area bounds
+        const margin = 60; // Keep goons away from edges
+        const randomX = margin + Math.random() * (rect.width - margin * 2);
+        const randomY = margin + Math.random() * (rect.height - margin * 2);
+        
         const member = {
+            id: Date.now() + Math.random(), // Unique ID for each goon
             name: `Goon ${this.familyMembers.length + 1}`,
             level: 1,
-            x: 50 + (this.familyMembers.length * 80),
-            y: 50,
+            x: randomX,
+            y: randomY,
             damage: 5,
             fireRate: 1000,
             lastShot: 0,
             range: 200,
-            element: this.createGoonElement(50 + (this.familyMembers.length * 80), 50)
+            upgradeCost: 50,
+            element: this.createGoonElement(randomX, randomY)
         };
         
         this.familyMembers.push(member);
@@ -553,15 +617,49 @@ class RatMafiaGame {
             </div>
         `;
         
-        this.familyMembers.forEach(member => {
+        this.familyMembers.forEach((member, index) => {
             const div = document.createElement('div');
             div.className = 'family-member';
             div.innerHTML = `
-                <span class="member-name">${member.name}</span>
-                <span class="member-level">Lv.${member.level}</span>
+                <div class="member-info">
+                    <span class="member-name">${member.name}</span>
+                    <span class="member-level">Lv.${member.level}</span>
+                </div>
+                <div class="member-stats">
+                    <span class="member-damage">⚔️ ${member.damage}</span>
+                    <span class="member-range">📏 ${member.range}</span>
+                </div>
+                <button class="goon-upgrade-btn" data-goon-index="${index}">
+                    Upgrade ($${member.upgradeCost})
+                </button>
             `;
             container.appendChild(div);
         });
+        
+        // Add event listeners for goon upgrade buttons
+        document.querySelectorAll('.goon-upgrade-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const goonIndex = parseInt(e.target.dataset.goonIndex);
+                this.upgradeGoon(goonIndex);
+            });
+        });
+    }
+    
+    upgradeGoon(index) {
+        const goon = this.familyMembers[index];
+        if (!goon) return;
+        
+        if (this.playerStats.cash >= goon.upgradeCost && goon.level < 10) {
+            this.playerStats.cash -= goon.upgradeCost;
+            goon.level++;
+            goon.damage += 3;
+            goon.range += 20;
+            goon.fireRate = Math.max(300, goon.fireRate - 50);
+            goon.upgradeCost = Math.floor(goon.upgradeCost * 1.5);
+            
+            this.updateUI();
+            this.updateFamilyList();
+        }
     }
     
     updateParticles() {
@@ -602,10 +700,6 @@ class RatMafiaGame {
     }
     
     restart() {
-        this.startScreen.style.display = 'flex';
-        this.gameContainer.style.display = 'none';
-        this.gameStarted = false;
-        
         // Clean up game elements
         if (this.gameArea) {
             this.enemies.forEach(enemy => enemy.element.remove());
@@ -613,6 +707,35 @@ class RatMafiaGame {
             this.goonBullets.forEach(bullet => bullet.element.remove());
             this.familyMembers.forEach(goon => goon.element.remove());
         }
+        
+        // Reset all game state variables
+        this.gameRunning = false;
+        this.gameStarted = false;
+        this.enemies = [];
+        this.bullets = [];
+        this.goonBullets = [];
+        this.familyMembers = [];
+        this.particles = [];
+        this.keys = {};
+        this.enemySpawnTimer = 0;
+        this.enemySpawnInterval = 2000;
+        
+        // Reset upgrades
+        this.upgrades = {
+            goon: { cost: 100, owned: 0, maxLevel: 10 },
+            weapon: { cost: 250, owned: 0, maxLevel: 5 },
+            speed: { cost: 150, owned: 0, maxLevel: 5 },
+            firerate: { cost: 200, owned: 0, maxLevel: 5 },
+            health: { cost: 300, owned: 0, maxLevel: 5 },
+            critical: { cost: 400, owned: 0, maxLevel: 3 },
+            lifesteal: { cost: 350, owned: 0, maxLevel: 3 },
+            multishot: { cost: 500, owned: 0, maxLevel: 3 }
+        };
+        
+        // Hide game over screen and show start screen
+        document.getElementById('game-over').style.display = 'none';
+        this.startScreen.style.display = 'flex';
+        this.gameContainer.style.display = 'none';
     }
 }
 
