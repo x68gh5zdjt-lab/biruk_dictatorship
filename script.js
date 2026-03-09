@@ -262,7 +262,7 @@ class RatMafiaGame {
             // Calculate how many enemies to spawn based on level milestones
             const levelTier = Math.floor(this.playerStats.level / 5); // How many 5-level milestones passed
             const baseEnemies = 1;
-            const additionalEnemies = levelTier * 2; // Add 2 enemies per 5 levels
+            const additionalEnemies = levelTier * 5; // Add 2 enemies per 5 levels
             const enemiesToSpawn = baseEnemies + additionalEnemies;
             
             // Spawn multiple enemies
