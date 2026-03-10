@@ -531,7 +531,7 @@ class RatMafiaGame {
             this.enemySpawnTimer = 0;
             
             // Slower spawn rate: 5 seconds base - 0.03 seconds per level
-            const baseInterval = 5000; // 5 seconds in milliseconds
+            const baseInterval = 3000; // 3 seconds in milliseconds
             const levelReduction = this.playerStats.level * 30; // 0.03 seconds = 30ms per level
             this.enemySpawnInterval = Math.max(1500, baseInterval - levelReduction); // Minimum 1.5 seconds
         }
