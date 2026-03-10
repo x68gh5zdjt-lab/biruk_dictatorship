@@ -91,6 +91,9 @@ Play as Biruk. Hire goons. Defeat the Collins clones. Become the dictator. Or di
 - **XP Popups**: Visual feedback for defeated enemies
 - **Mafia Theme**: Dark, atmospheric dictatorship aesthetic
 
+### Easter Eggs
+- **_____**: Do you know the konami code? At the start enter it besides the last input in the sequence to unlock a secret.
+
 ## Game Strategy
 
 ### Early Game (Levels 1-4)
@@ -122,6 +125,7 @@ Play as Biruk. Hire goons. Defeat the Collins clones. Become the dictator. Or di
 5. **Critical Mass**: Stack critical hit chance with damage upgrades for burst damage
 
 ## Technical Details
+1. **stuck to screen glitch**: There is a glitch where the player gets stuck to side of screen or gets contantly pulled to the side of the screen.
 
 ### Browser Compatibility
 - **Chrome**: Full support
@@ -156,5 +160,6 @@ Play as Biruk. Hire goons. Defeat the Collins clones. Become the dictator. Or di
 **Story**: Biruk's Manifesto  
 
 ---
+*統計メロで眠らないで*
 
 *Remember: In the world of Biruk Dictatorship, only the ruthless survive. Will you become the world's greatest dictator, or will Phil Collins' clones bring your reign to an end?*

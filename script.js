@@ -5,6 +5,64 @@ class RatMafiaGame {
         this.gameContainer = document.getElementById('game-container');
         this.startButton = document.getElementById('start-game-btn');
         
+        // Konami code for Japanese storyline
+        this.konamiCode = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
+        this.konamiIndex = 0;
+        this.japaneseMode = false; // Start in English, switch to Japanese with konami code
+        
+        // Japanese text for game elements
+        this.japaneseText = {
+            health: "体力",
+            xp: "経験値",
+            level: "レベル",
+            familySize: "家族のサイズ",
+            cash: "現金",
+            mafiaUpgrades: "マフィアアップグレード",
+            yourFamily: "あなたの家族",
+            hireGoon: "ゴーンを雇う",
+            betterWeapon: "より良い武器",
+            speedBoost: "スピードブースト",
+            fireRate: "発射速度",
+            healthBoost: "体力ブースト",
+            criticalHits: "クリティカルヒット",
+            lifesteal: "ライフスティール",
+            multishot: "マルチショット",
+            cost: "費用",
+            hire: "雇う",
+            upgrade: "アップグレード",
+            gameOver: "ゲームオーバー",
+            yourDictatorshipHasFallen: "あなたの独裁政権は崩壊しました",
+            finalScore: "最終スコア",
+            startNewRegime: "新しい体制を開始",
+            youBoss: "あなた（ボス）",
+            howToPlay: "遊び方",
+            instructions: "WASDまたは矢印キーで移動。マウスクリックでフィル・コリンズのクローンを撃つ。タブアウトで移動をクリア。"
+        };
+        
+        // Japanese storyline text
+        this.japaneseStory = {
+            title: "🐀ビルク独裁政権🐀",
+            paragraphs: [
+                "昔々、世界は平和でした…少なくとも、重要な人が注意を払っていなかったからです。",
+                
+                "そこにビルクが現れました。",
+                
+                "ビルクには夢がありました。「成功する」や「人々を助ける」といった普通の夢ではありません。いいえ、ビルクの夢はシンプルでした：**世界最高の独裁者になること**。",
+                
+                "決意と疑わしいリーダーシップスキル、そして現金でいっぱいの財布を武器に、ビルクはすべての薄汚い路地、地下ジム、インターネット上の怪しい求人広告からゴーンを雇い始めました。",
+                
+                "計画は完璧でした…クイントが現れるまで。",
+                
+                "クイント、ビルクの宿敵は、長年準備をしていました。秘密の研究所の奥深くで、クイントは無敵の軍隊を築きました…**フィル・コリンズのクローン数千体**。",
+                
+                "今、世界は最大の対決に直面しています：ゴーンの軍隊を持つ台頭する独裁者 vs. 歌い、ドラムを叩くフィル・コリンズのクローンの無敵の力。",
+                
+                "世界支配の戦いが今始まります。",
+                
+                "ビルクとしてプレイしてください。ゴーンを雇ってください。コリンズのクローンを倒してください。独裁者になってください。さもなければ死んでください。💥"
+            ]
+        };
+        
         this.setupStartScreen();
     }
     
@@ -12,6 +70,140 @@ class RatMafiaGame {
         this.startButton.addEventListener('click', () => {
             this.startGame();
         });
+        
+        // Add konami code listener
+        document.addEventListener('keydown', (e) => {
+            if (!this.gameStarted) {
+                this.checkKonamiCode(e.key.toLowerCase());
+            }
+        });
+    }
+    
+    checkKonamiCode(key) {
+        if (key === this.konamiCode[this.konamiIndex]) {
+            this.konamiIndex++;
+            if (this.konamiIndex === this.konamiCode.length) {
+                this.activateJapaneseMode();
+                this.konamiIndex = 0;
+            }
+        } else {
+            this.konamiIndex = 0;
+        }
+    }
+    
+    activateJapaneseMode() {
+        this.japaneseMode = true;
+        this.updateStoryText();
+        
+        // Update game title and start button
+        const gameTitle = document.querySelector('.game-title');
+        const startButton = document.getElementById('start-game-btn');
+        
+        if (gameTitle) {
+            gameTitle.textContent = this.japaneseText.title;
+        }
+        
+        if (startButton) {
+            startButton.textContent = 'あなたの支配を開始';
+        }
+    }
+    
+    updateUIText() {
+        if (!this.japaneseMode) return;
+        
+        // Update game header
+        const healthLabel = document.querySelector('.stat-label');
+        if (healthLabel) healthLabel.textContent = this.japaneseText.health + ':';
+        
+        // Update upgrade section
+        const upgradeTitles = document.querySelectorAll('.upgrade-item h3');
+        const upgradeTexts = [
+            this.japaneseText.hireGoon,
+            this.japaneseText.betterWeapon,
+            this.japaneseText.speedBoost,
+            this.japaneseText.fireRate,
+            this.japaneseText.healthBoost,
+            this.japaneseText.criticalHits,
+            this.japaneseText.lifesteal,
+            this.japaneseText.multishot
+        ];
+        
+        upgradeTitles.forEach((title, index) => {
+            if (upgradeTexts[index]) {
+                title.textContent = upgradeTexts[index];
+            }
+        });
+        
+        // Update cost labels
+        const costLabels = document.querySelectorAll('.cost');
+        costLabels.forEach(label => {
+            const currentText = label.textContent;
+            if (currentText.includes('Cost:')) {
+                label.textContent = currentText.replace('Cost:', this.japaneseText.cost + ':');
+            }
+        });
+        
+        // Update upgrade buttons
+        const upgradeButtons = document.querySelectorAll('.upgrade-btn');
+        upgradeButtons.forEach(btn => {
+            if (btn.textContent === 'Hire') {
+                btn.textContent = this.japaneseText.hire;
+            } else if (btn.textContent === 'Upgrade') {
+                btn.textContent = this.japaneseText.upgrade;
+            }
+        });
+        
+        // Update family section
+        const familyTitle = document.querySelector('.family-list h2');
+        if (familyTitle) familyTitle.textContent = this.japaneseText.yourFamily;
+        
+        // Update game over screen
+        const gameOverTitle = document.querySelector('.game-over-content h2');
+        if (gameOverTitle) gameOverTitle.textContent = this.japaneseText.gameOver;
+        
+        const gameOverText = document.querySelector('.game-over-content p');
+        if (gameOverText) gameOverText.textContent = this.japaneseText.yourDictatorshipHasFallen;
+        
+        const finalScoreLabel = document.querySelector('#final-score').parentElement;
+        if (finalScoreLabel) {
+            finalScoreLabel.innerHTML = `${this.japaneseText.finalScore}: <span id="final-score">0</span>`;
+        }
+        
+        const restartBtn = document.getElementById('restart-btn');
+        if (restartBtn) restartBtn.textContent = this.japaneseText.startNewRegime;
+        
+        // Update instructions
+        const instructionsTitle = document.querySelector('.instructions strong');
+        if (instructionsTitle) instructionsTitle.textContent = this.japaneseText.howToPlay + ':';
+        
+        const instructionsText = document.querySelector('.instructions');
+        if (instructionsText && instructionsText.childNodes.length > 1) {
+            instructionsText.childNodes[1].textContent = ' ' + this.japaneseText.instructions;
+        }
+    }
+    
+    updateStoryText() {
+        const storyText = document.querySelector('.story-text');
+        const gameTitle = document.querySelector('.game-title');
+        
+        if (this.japaneseMode && storyText && gameTitle) {
+            gameTitle.textContent = this.japaneseStory.title;
+            
+            let htmlContent = '';
+            this.japaneseStory.paragraphs.forEach((paragraph, index) => {
+                if (paragraph.includes('**')) {
+                    // Highlight text
+                    htmlContent += `<p class="highlight">${paragraph.replace(/\*\*/g, '')}</p>`;
+                } else if (paragraph.includes('💥')) {
+                    // Final line
+                    htmlContent += `<p class="final-line">${paragraph}</p>`;
+                } else {
+                    htmlContent += `<p>${paragraph}</p>`;
+                }
+            });
+            
+            storyText.innerHTML = htmlContent;
+        }
     }
     
     startGame() {
@@ -50,6 +242,7 @@ class RatMafiaGame {
         this.enemies = [];
         this.bullets = [];
         this.goonBullets = [];
+        this.enemyBullets = [];
         this.particles = [];
         
         this.upgrades = {
@@ -66,21 +259,66 @@ class RatMafiaGame {
         this.keys = {};
         this.gameRunning = true;
         this.enemySpawnTimer = 0;
-        this.enemySpawnInterval = 2000;
+        this.enemySpawnInterval = 5000; // Start with 5 seconds for easier beginning
         
         // Time-based difficulty scaling
         this.gameStartTime = Date.now();
         this.timeDifficultyMultiplier = 1;
         
+        // Enemy types configuration with base chances
+        this.enemyTypes = {
+            regular: {
+                baseChance: 0.9, // 90% chance at start
+                healthMultiplier: 1,
+                damageMultiplier: 1,
+                speedMultiplier: 1,
+                valueMultiplier: 1,
+                color: '#ff6b6b',
+                canShoot: false
+            },
+            shooter: {
+                baseChance: 0.05, // 5% chance at start
+                healthMultiplier: 0.7,
+                damageMultiplier: 0.5,
+                speedMultiplier: 0.8,
+                valueMultiplier: 1.5,
+                color: '#4ecdc4',
+                canShoot: true,
+                shootRange: 250,
+                shootCooldown: 2000
+            },
+            tank: {
+                baseChance: 0.05, // 5% chance at start
+                healthMultiplier: 2.5,
+                damageMultiplier: 2,
+                speedMultiplier: 0.6,
+                valueMultiplier: 2,
+                color: '#95e77e',
+                canShoot: false
+            }
+        };
+        
+        // Special enemy progression settings
+        this.specialEnemyProgression = {
+            maxShooterChance: 0.35, // Max 35% shooter chance
+            maxTankChance: 0.25,    // Max 25% tank chance
+            progressionTime: 120000, // 2 minutes to reach max chances
+            startTime: Date.now()
+        };
+        
         // Load sound effects
         this.enemyDeathSound = new Audio('I Don\'t Care Anymore (2016 Remaster) (mp3cut.net).mp3');
         this.enemyDeathSound.volume = 0.3; // Set volume to 30%
+        
+        this.playerShootSound = new Audio('Cartoon Gun SFX (mp3cut.net).mp3');
+        this.playerShootSound.volume = 0.4; // Set volume to 40%
         
         this.init();
     }
     
     init() {
         this.setupEventListeners();
+        this.updateUIText();
         this.updateUI();
         this.gameLoop();
         this.spawnEnemy();
@@ -136,6 +374,7 @@ class RatMafiaGame {
         this.updateGoons();
         this.updateBullets();
         this.updateGoonBullets();
+        this.updateEnemyBullets();
         this.updateParticles();
         this.checkCollisions();
         this.spawnEnemies();
@@ -190,11 +429,22 @@ class RatMafiaGame {
         }
     }
     
+    playPlayerShootSound() {
+        // Play the player shoot sound with error handling
+        this.playerShootSound.currentTime = 0; // Reset to start for rapid playback
+        this.playerShootSound.play().catch(error => {
+            console.log('Could not play player shoot sound:', error);
+        });
+    }
+    
     shoot(e) {
         const now = Date.now();
         if (now - this.playerStats.lastShot < this.playerStats.fireRate) return;
         
         this.playerStats.lastShot = now;
+        
+        // Play shoot sound
+        this.playPlayerShootSound();
         
         const rect = this.gameArea.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -260,26 +510,42 @@ class RatMafiaGame {
         this.enemySpawnTimer += 16;
         if (this.enemySpawnTimer >= this.enemySpawnInterval) {
             // Calculate how many enemies to spawn based on level milestones
-            const levelTier = Math.floor(this.playerStats.level / 5); // How many 5-level milestones passed
+            const levelTier = Math.floor(this.playerStats.level / 10); // How many 10-level milestones passed
             const baseEnemies = 1;
-            const additionalEnemies = levelTier * 5; // Add 2 enemies per 5 levels
-            const enemiesToSpawn = baseEnemies + additionalEnemies;
+            const additionalEnemies = levelTier; // Add 1 enemy per 10 levels
+            const enemiesToSpawn = Math.min(baseEnemies + additionalEnemies, 5); // Max 5 enemies at once
             
             // Spawn multiple enemies
             for (let i = 0; i < enemiesToSpawn; i++) {
                 // Add small delay between spawns to prevent them all appearing at exact same spot
                 setTimeout(() => {
                     this.spawnEnemy();
-                }, i * 100); // 100ms delay between each enemy spawn
+                }, i * 200); // 200ms delay between each enemy spawn
             }
             
             this.enemySpawnTimer = 0;
             
-            // Spawn rate based on player level: 2 seconds - 0.1 seconds per level
-            const baseInterval = 2000; // 2 seconds in milliseconds
-            const levelReduction = this.playerStats.level * 100; // 0.1 seconds = 100ms per level
-            this.enemySpawnInterval = Math.max(400, baseInterval - levelReduction); // Minimum 400ms (0.4 seconds)
+            // Slower spawn rate: 5 seconds base - 0.03 seconds per level
+            const baseInterval = 5000; // 5 seconds in milliseconds
+            const levelReduction = this.playerStats.level * 30; // 0.03 seconds = 30ms per level
+            this.enemySpawnInterval = Math.max(1500, baseInterval - levelReduction); // Minimum 1.5 seconds
         }
+    }
+    
+    getCurrentEnemyChances() {
+        const elapsed = Date.now() - this.specialEnemyProgression.startTime;
+        const progression = Math.min(elapsed / this.specialEnemyProgression.progressionTime, 1);
+        
+        const shooterChance = this.enemyTypes.shooter.baseChance + 
+            (this.specialEnemyProgression.maxShooterChance - this.enemyTypes.shooter.baseChance) * progression;
+        const tankChance = this.enemyTypes.tank.baseChance + 
+            (this.specialEnemyProgression.maxTankChance - this.enemyTypes.tank.baseChance) * progression;
+        
+        return {
+            shooter: shooterChance,
+            tank: tankChance,
+            regular: Math.max(0, 1 - shooterChance - tankChance)
+        };
     }
     
     spawnEnemy() {
@@ -294,35 +560,92 @@ class RatMafiaGame {
             case 3: x = -50; y = Math.random() * rect.height; break;
         }
         
-        // Apply time-based difficulty scaling
-        const baseHealth = 30 + (this.playerStats.level * 5);
+        // Randomly select enemy type using progressive chances
+        const chances = this.getCurrentEnemyChances();
+        const rand = Math.random();
+        let enemyType;
+        
+        if (rand < chances.regular) {
+            enemyType = 'regular';
+        } else if (rand < chances.regular + chances.shooter) {
+            enemyType = 'shooter';
+        } else {
+            enemyType = 'tank';
+        }
+        
+        const typeConfig = this.enemyTypes[enemyType];
+        
+        // Apply time-based difficulty scaling with enemy type multipliers
+        const baseHealth = (30 + (this.playerStats.level * 5)) * typeConfig.healthMultiplier;
         const scaledHealth = Math.floor(baseHealth * this.timeDifficultyMultiplier);
-        const baseValue = 10 + (this.playerStats.level * 2);
+        const baseValue = (10 + (this.playerStats.level * 2)) * typeConfig.valueMultiplier;
         const scaledValue = Math.floor(baseValue * this.timeDifficultyMultiplier);
         
         const enemy = {
+            type: enemyType,
             x: x,
             y: y,
             health: scaledHealth,
             maxHealth: scaledHealth,
             value: scaledValue,
-            damage: Math.floor(10 * this.timeDifficultyMultiplier), // Enemy damage also scales
-            element: this.createEnemyElement(x, y)
+            damage: Math.floor(10 * this.timeDifficultyMultiplier * typeConfig.damageMultiplier),
+            speed: typeConfig.speedMultiplier,
+            element: this.createEnemyElement(x, y, enemyType)
         };
+        
+        // Add shooter-specific properties
+        if (enemyType === 'shooter') {
+            enemy.shootRange = typeConfig.shootRange;
+            enemy.shootCooldown = typeConfig.shootCooldown;
+            enemy.lastShot = 0;
+        }
         
         this.enemies.push(enemy);
     }
     
-    createEnemyElement(x, y) {
+    createEnemyElement(x, y, enemyType) {
         const enemy = document.createElement('div');
-        enemy.className = 'enemy-rat';
+        const typeConfig = this.enemyTypes[enemyType];
+        
+        enemy.className = `enemy-rat enemy-${enemyType}`;
         enemy.style.left = x + 'px';
         enemy.style.top = y + 'px';
-        enemy.innerHTML = `
-            <div class="phil-face">
-                <img src="https://m.media-amazon.com/images/I/91MvvblZdsL._UF1000,1000_QL80_.jpg" alt="Phil Collins" class="phil-image">
-            </div>
-        `;
+        
+        // Different visual styles for different enemy types
+        let enemyContent = '';
+        let sizeClass = '';
+        
+        switch(enemyType) {
+            case 'shooter':
+                sizeClass = 'enemy-small';
+                enemyContent = `
+                    <div class="phil-face">
+                        <div class="enemy-indicator">🔫</div>
+                        <img src="https://m.media-amazon.com/images/I/91MvvblZdsL._UF1000,1000_QL80_.jpg" alt="Phil Collins" class="phil-image">
+                    </div>
+                `;
+                break;
+            case 'tank':
+                sizeClass = 'enemy-large';
+                enemyContent = `
+                    <div class="phil-face">
+                        <div class="enemy-indicator">🛡️</div>
+                        <img src="https://m.media-amazon.com/images/I/91MvvblZdsL._UF1000,1000_QL80_.jpg" alt="Phil Collins" class="phil-image">
+                    </div>
+                `;
+                break;
+            default: // regular
+                sizeClass = 'enemy-normal';
+                enemyContent = `
+                    <div class="phil-face">
+                        <img src="https://m.media-amazon.com/images/I/91MvvblZdsL._UF1000,1000_QL80_.jpg" alt="Phil Collins" class="phil-image">
+                    </div>
+                `;
+        }
+        
+        enemy.innerHTML = enemyContent;
+        enemy.classList.add(sizeClass);
+        
         this.gameArea.appendChild(enemy);
         return enemy;
     }
@@ -337,24 +660,52 @@ class RatMafiaGame {
             const playerMoving = Math.abs(dx - (this.playerStats.x - this.playerStats.prevX || 0)) > 1 || 
                                Math.abs(dy - (this.playerStats.y - this.playerStats.prevY || 0)) > 1;
             
-            if (distance > 35) { // Keep distance from player
-                // Always move towards player
-                const moveSpeed = playerMoving ? 2 : 3; // Move faster when player is stationary
-                const moveX = (dx / distance) * moveSpeed;
-                const moveY = (dy / distance) * moveSpeed;
-                enemy.x += moveX;
-                enemy.y += moveY;
-                enemy.element.style.left = enemy.x + 'px';
-                enemy.element.style.top = enemy.y + 'px';
+            // Handle shooter enemy behavior
+            if (enemy.type === 'shooter') {
+                const now = Date.now();
+                
+                // Shoot at player if in range
+                if (distance <= enemy.shootRange && now - enemy.lastShot >= enemy.shootCooldown) {
+                    enemy.lastShot = now;
+                    this.enemyShoot(enemy);
+                }
+                
+                // Keep distance from player, move away if too close
+                if (distance < enemy.shootRange - 50) {
+                    // Move away from player
+                    const moveSpeed = 1.5 * enemy.speed;
+                    const moveX = -(dx / distance) * moveSpeed;
+                    const moveY = -(dy / distance) * moveSpeed;
+                    enemy.x += moveX;
+                    enemy.y += moveY;
+                } else if (distance > enemy.shootRange) {
+                    // Move towards player if too far
+                    const moveSpeed = playerMoving ? 1.5 * enemy.speed : 2 * enemy.speed;
+                    const moveX = (dx / distance) * moveSpeed;
+                    const moveY = (dy / distance) * moveSpeed;
+                    enemy.x += moveX;
+                    enemy.y += moveY;
+                }
+            } else {
+                // Regular and tank behavior: move towards player
+                if (distance > 35) { // Keep distance from player
+                    const moveSpeed = playerMoving ? (2 * enemy.speed) : (3 * enemy.speed);
+                    const moveX = (dx / distance) * moveSpeed;
+                    const moveY = (dy / distance) * moveSpeed;
+                    enemy.x += moveX;
+                    enemy.y += moveY;
+                }
             }
             
-            // Only attack if close enough, don't die on collision
-            if (distance < 35) {
+            enemy.element.style.left = enemy.x + 'px';
+            enemy.element.style.top = enemy.y + 'px';
+            
+            // Only attack if close enough (melee enemies only)
+            if (distance < 35 && enemy.type !== 'shooter') {
                 if (!this.playerStats.invulnerable && this.playerStats.damageCooldown <= 0) {
-                    this.takeDamage(enemy.damage || 10); // Use enemy's scaled damage or fallback to 10
-                    this.playerStats.damageCooldown = 1500; // 1.5 second cooldown between hits
+                    this.takeDamage(enemy.damage || 10);
+                    this.playerStats.damageCooldown = 1500;
                 }
-                // Don't remove enemy - keep them alive to be shot
             }
             
             return enemy.health > 0;
@@ -389,6 +740,66 @@ class RatMafiaGame {
                 goon.lastShot = now;
                 this.goonShoot(goon, nearestEnemy);
             }
+        });
+    }
+    
+    enemyShoot(enemy) {
+        const angle = Math.atan2(
+            (this.playerStats.y + 30) - (enemy.y + 25),
+            (this.playerStats.x + 30) - (enemy.x + 25)
+        );
+        
+        const bullet = {
+            x: enemy.x + 25,
+            y: enemy.y + 25,
+            vx: Math.cos(angle) * 6,
+            vy: Math.sin(angle) * 6,
+            damage: enemy.damage,
+            element: this.createEnemyBulletElement(enemy.x + 25, enemy.y + 25)
+        };
+        
+        this.enemyBullets.push(bullet);
+    }
+    
+    createEnemyBulletElement(x, y) {
+        const bullet = document.createElement('div');
+        bullet.className = 'enemy-bullet';
+        bullet.style.left = x + 'px';
+        bullet.style.top = y + 'px';
+        this.gameArea.appendChild(bullet);
+        return bullet;
+    }
+    
+    updateEnemyBullets() {
+        const rect = this.gameArea.getBoundingClientRect();
+        
+        this.enemyBullets = this.enemyBullets.filter(bullet => {
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            
+            bullet.element.style.left = bullet.x + 'px';
+            bullet.element.style.top = bullet.y + 'px';
+            
+            // Check collision with player
+            const dx = bullet.x - (this.playerStats.x + 30);
+            const dy = bullet.y - (this.playerStats.y + 30);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 25) {
+                if (!this.playerStats.invulnerable && this.playerStats.damageCooldown <= 0) {
+                    this.takeDamage(bullet.damage);
+                    this.playerStats.damageCooldown = 500; // Shorter cooldown for bullets
+                }
+                bullet.element.remove();
+                return false;
+            }
+            
+            if (bullet.x < 0 || bullet.x > rect.width || bullet.y < 0 || bullet.y > rect.height) {
+                bullet.element.remove();
+                return false;
+            }
+            
+            return true;
         });
     }
     
@@ -649,8 +1060,9 @@ class RatMafiaGame {
         goon.style.left = x + 'px';
         goon.style.top = y + 'px';
         goon.innerHTML = `
-            <div class="goon-base">🛡️</div>
-            <div class="goon-weapon">🔫</div>
+            <div class="goon-base">
+                <img src="mafia_asset.jpg" alt="Goon" class="goon-image">
+            </div>
         `;
         this.gameArea.appendChild(goon);
         return goon;
@@ -658,9 +1070,10 @@ class RatMafiaGame {
     
     updateFamilyList() {
         const container = document.getElementById('family-members');
+        const bossName = this.japaneseMode ? this.japaneseText.youBoss : 'You (Boss)';
         container.innerHTML = `
             <div class="family-member">
-                <span class="member-name">You (Boss)</span>
+                <span class="member-name">${bossName}</span>
                 <span class="member-level">Lv.${this.playerStats.level}</span>
             </div>
         `;
@@ -691,6 +1104,16 @@ class RatMafiaGame {
                 this.upgradeGoon(goonIndex);
             });
         });
+        
+        // Update goon upgrade buttons text if in Japanese mode
+        if (this.japaneseMode) {
+            document.querySelectorAll('.goon-upgrade-btn').forEach(btn => {
+                const currentText = btn.textContent;
+                if (currentText.includes('Upgrade')) {
+                    btn.textContent = currentText.replace('Upgrade', this.japaneseText.upgrade);
+                }
+            });
+        }
     }
     
     upgradeGoon(index) {
@@ -720,6 +1143,17 @@ class RatMafiaGame {
         document.getElementById('family-size').textContent = this.familyMembers.length + 1;
         document.getElementById('cash').textContent = `$${this.playerStats.cash}`;
         
+        // Update stat labels if in Japanese mode
+        if (this.japaneseMode) {
+            const statLabels = document.querySelectorAll('.stat-label');
+            const labelTexts = [this.japaneseText.health, this.japaneseText.xp, this.japaneseText.level, this.japaneseText.familySize, this.japaneseText.cash];
+            statLabels.forEach((label, index) => {
+                if (labelTexts[index]) {
+                    label.textContent = labelTexts[index] + ':';
+                }
+            });
+        }
+        
         // Update health color based on remaining health
         const healthElement = document.getElementById('health');
         const healthPercent = this.playerStats.health / this.playerStats.maxHealth;
@@ -738,6 +1172,24 @@ class RatMafiaGame {
             btn.parentElement.querySelector('.cost').textContent = `Cost: $${upgrade.cost}`;
         });
         
+        // Update cost labels and buttons if in Japanese mode
+        if (this.japaneseMode) {
+            document.querySelectorAll('.cost').forEach(label => {
+                const currentText = label.textContent;
+                if (currentText.includes('Cost:')) {
+                    label.textContent = currentText.replace('Cost:', this.japaneseText.cost + ':');
+                }
+            });
+            
+            document.querySelectorAll('.upgrade-btn').forEach(btn => {
+                if (btn.textContent === 'Hire') {
+                    btn.textContent = this.japaneseText.hire;
+                } else if (btn.textContent === 'Upgrade') {
+                    btn.textContent = this.japaneseText.upgrade;
+                }
+            });
+        }
+        
         this.updateFamilyList();
     }
     
@@ -753,6 +1205,7 @@ class RatMafiaGame {
             this.enemies.forEach(enemy => enemy.element.remove());
             this.bullets.forEach(bullet => bullet.element.remove());
             this.goonBullets.forEach(bullet => bullet.element.remove());
+            this.enemyBullets.forEach(bullet => bullet.element.remove());
             this.familyMembers.forEach(goon => goon.element.remove());
         }
         
@@ -762,11 +1215,12 @@ class RatMafiaGame {
         this.enemies = [];
         this.bullets = [];
         this.goonBullets = [];
+        this.enemyBullets = [];
         this.familyMembers = [];
         this.particles = [];
         this.keys = {};
         this.enemySpawnTimer = 0;
-        this.enemySpawnInterval = 2000;
+        this.enemySpawnInterval = 5000; // Reset to 5 seconds
         
         // Reset upgrades
         this.upgrades = {
@@ -784,6 +1238,13 @@ class RatMafiaGame {
         document.getElementById('game-over').style.display = 'none';
         this.startScreen.style.display = 'flex';
         this.gameContainer.style.display = 'none';
+        
+        // Maintain Japanese mode and update start screen text
+        if (this.japaneseMode) {
+            this.updateStoryText();
+        } else {
+            this.konamiIndex = 0;
+        }
     }
 }
 
