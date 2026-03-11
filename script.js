@@ -221,10 +221,10 @@ class RatMafiaGame {
         const centerY = (rect.height - 60) / 2; // 60 is player height
         
         this.playerStats = {
-            x: 100,
-            y: 100,
-            prevX: 100,
-            prevY: 100,
+            x: centerX,
+            y: centerY,
+            prevX: centerX,
+            prevY: centerY,
             speed: 5,
             damage: 10,
             fireRate: 500,
@@ -270,13 +270,13 @@ class RatMafiaGame {
         this.powerUpConfig = {
             dropChance: 0.05, // 5% chance to drop power-up on enemy kill
             types: {
-                health: { chance: 0.3, color: '#ff6347', icon: '❤️', value: 25 },
-                weapon: { chance: 0.2, color: '#ffd700', icon: '⚔️', value: 5 },
-                speed: { chance: 0.15, color: '#4ecdc4', icon: '🪶', value: 1 },
-                firerate: { chance: 0.15, color: '#ff69b4', icon: '🔫', value: 50 },
-                critical: { chance: 0.1, color: '#ff1493', icon: '💥', value: 0.1 },
-                lifesteal: { chance: 0.05, color: '#90ee90', icon: '🩸', value: 0.05 },
-                multishot: { chance: 0.05, color: '#daa520', icon: '🎯', value: 1 }
+                health: { chance: 0.35, color: '#ff6347', icon: '❤️', value: 25 },      // Most common
+                weapon: { chance: 0.15, color: '#ffd700', icon: '⚔️', value: 5 },       // Uncommon
+                speed: { chance: 0.25, color: '#4ecdc4', icon: '🪶', value: 1 },       // Uncommon
+                firerate: { chance: 0.12, color: '#ff69b4', icon: '🔫', value: 50 },     // common
+                critical: { chance: 0.08, color: '#ff1493', icon: '💥', value: 0.1 },     // Rare
+                lifesteal: { chance: 0.03, color: '#90ee90', icon: '🩸', value: 0.05 },   // Very rare
+                multishot: { chance: 0.02, color: '#daa520', icon: '🎯', value: 1 }      // Very rare
             }
         };
         
@@ -1419,6 +1419,54 @@ class RatMafiaGame {
         }
         
         this.updateFamilyList();
+    }
+    
+    purchaseUpgrade(type) {
+        const upgrade = this.upgrades[type];
+        
+        if (this.playerStats.cash >= upgrade.cost && upgrade.owned < upgrade.maxLevel) {
+            this.playerStats.cash -= upgrade.cost;
+            upgrade.owned++;
+            
+            switch(type) {
+                case 'goon':
+                    this.addFamilyMember();
+                    upgrade.cost = Math.floor(upgrade.cost * 1.5);
+                    break;
+                case 'weapon':
+                    this.playerStats.damage += 5;
+                    upgrade.cost = Math.floor(upgrade.cost * 1.8);
+                    break;
+                case 'speed':
+                    this.playerStats.speed += 2;
+                    upgrade.cost = Math.floor(upgrade.cost * 1.6);
+                    break;
+                case 'firerate':
+                    this.playerStats.fireRate = Math.max(100, this.playerStats.fireRate - 50);
+                    upgrade.cost = Math.floor(upgrade.cost * 1.7);
+                    break;
+                case 'health':
+                    this.playerStats.maxHealth += 25;
+                    this.playerStats.health += 25;
+                    upgrade.cost = Math.floor(upgrade.cost * 1.9);
+                    break;
+                case 'critical':
+                    this.playerStats.criticalChance += 0.15;
+                    upgrade.cost = Math.floor(upgrade.cost * 2.0);
+                    break;
+                case 'lifesteal':
+                    this.playerStats.lifestealAmount += 0.1;
+                    upgrade.cost = Math.floor(upgrade.cost * 1.8);
+                    break;
+                case 'multishot':
+                    this.playerStats.multishotCount += 1;
+                    upgrade.cost = Math.floor(upgrade.cost * 2.2);
+                    break;
+            }
+            
+            this.updateUI();
+            this.updateUIText();
+        }
     }
     
     gameOver() {

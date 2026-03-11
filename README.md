@@ -1,4 +1,4 @@
-# 🐀 Biruk Dictatorship 🐀
+# Biruk Dictatorship
 
 ## Story
 
@@ -180,7 +180,8 @@ sequence to unlock a secret.
 **Story**: Biruk's Manifesto  
 **Player Character**: Biruk's LinkedIn Professional Photo  
 **Battlefield**: United States Capitol Building  
-**Audio**: Cartoon Gun Sound Effects  
+**Audio**: Cartoon Gun Sound Effects 
+**Music Credit**: Collins, Phil "I Don't Care Anymore". Hello, I Must Be Going.  1983
 
 ---
 *統計メロで眠らないで*
