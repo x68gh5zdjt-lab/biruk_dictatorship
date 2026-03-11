@@ -253,6 +253,7 @@ class RatMafiaGame {
         this.goonBullets = [];
         this.enemyBullets = [];
         this.particles = [];
+        this.powerUps = []; // New array for dropped power-ups
         
         this.upgrades = {
             goon: { cost: 100, owned: 0, maxLevel: 10 },
@@ -263,6 +264,20 @@ class RatMafiaGame {
             critical: { cost: 400, owned: 0, maxLevel: 3 },
             lifesteal: { cost: 350, owned: 0, maxLevel: 3 },
             multishot: { cost: 500, owned: 0, maxLevel: 3 }
+        };
+        
+        // Power-up drop configuration
+        this.powerUpConfig = {
+            dropChance: 0.05, // 5% chance to drop power-up on enemy kill
+            types: {
+                health: { chance: 0.3, color: '#ff6347', icon: '❤️', value: 25 },
+                weapon: { chance: 0.2, color: '#ffd700', icon: '⚔️', value: 5 },
+                speed: { chance: 0.15, color: '#4ecdc4', icon: '🪶', value: 1 },
+                firerate: { chance: 0.15, color: '#ff69b4', icon: '🔫', value: 50 },
+                critical: { chance: 0.1, color: '#ff1493', icon: '💥', value: 0.1 },
+                lifesteal: { chance: 0.05, color: '#90ee90', icon: '🩸', value: 0.05 },
+                multishot: { chance: 0.05, color: '#daa520', icon: '🎯', value: 1 }
+            }
         };
         
         this.keys = {};
@@ -385,7 +400,9 @@ class RatMafiaGame {
         this.updateGoonBullets();
         this.updateEnemyBullets();
         this.updateParticles();
+        this.updatePowerUps(); // Add power-up updates
         this.checkCollisions();
+        this.checkPowerUpPickups(); // Check for power-up collection
         this.spawnEnemies();
         this.updateTimeDifficulty();
         
@@ -983,6 +1000,7 @@ class RatMafiaGame {
                         this.createXPPopup(enemy.x + 25, enemy.y + 25, enemy.value);
                         this.gainXP(enemy.value);
                         this.gainCash(enemy.value * 2);
+                        this.dropPowerUp(enemy.x + 25, enemy.y + 25); // Drop power-up chance
                         this.playEnemyDeathSound();
                         enemy.element.remove();
                         this.enemies.splice(enemyIndex, 1);
@@ -1089,51 +1107,151 @@ class RatMafiaGame {
         this.playerStats.cash += amount;
         this.updateUI();
     }
-
-    purchaseUpgrade(type) {
-        const upgrade = this.upgrades[type];
+    
+    dropPowerUp(x, y) {
+        // Check if power-up should drop (15% chance)
+        if (Math.random() > this.powerUpConfig.dropChance) return;
         
-        if (this.playerStats.cash >= upgrade.cost && upgrade.owned < upgrade.maxLevel) {
-            this.playerStats.cash -= upgrade.cost;
-            upgrade.owned++;
-
-            switch(type) {
-                case 'goon':
-                    this.addFamilyMember();
-                    upgrade.cost = Math.floor(upgrade.cost * 1.5);
-                    break;
-                case 'weapon':
-                    this.playerStats.damage += 5;
-                    upgrade.cost = Math.floor(upgrade.cost * 1.8);
-                    break;
-                case 'speed':
-                    this.playerStats.speed += 2;
-                    upgrade.cost = Math.floor(upgrade.cost * 1.6);
-                    break;
-                case 'firerate':
-                    this.playerStats.fireRate = Math.max(100, this.playerStats.fireRate - 50);
-                    upgrade.cost = Math.floor(upgrade.cost * 1.7);
-                    break;
-                case 'health':
-                    this.playerStats.maxHealth += 25;
-                    this.playerStats.health += 25;
-                    upgrade.cost = Math.floor(upgrade.cost * 1.9);
-                    break;
-                case 'critical':
-                    this.playerStats.criticalChance += 0.15; // 15% chance per level
-                    upgrade.cost = Math.floor(upgrade.cost * 2.0);
-                    break;
-                case 'lifesteal':
-                    this.playerStats.lifestealAmount += 0.1; // 10% lifesteal per level
-                    upgrade.cost = Math.floor(upgrade.cost * 1.8);
-                    break;
-                case 'multishot':
-                    this.playerStats.multishotCount += 1;
-                    upgrade.cost = Math.floor(upgrade.cost * 2.2);
-                    break;
+        // Select random power-up type based on chances
+        const rand = Math.random();
+        let cumulativeChance = 0;
+        let selectedType = null;
+        
+        for (const [type, config] of Object.entries(this.powerUpConfig.types)) {
+            cumulativeChance += config.chance;
+            if (rand <= cumulativeChance) {
+                selectedType = type;
+                break;
             }
-            this.updateUI();
         }
+        
+        if (!selectedType) return;
+        
+        const powerUp = {
+            x: x,
+            y: y,
+            type: selectedType,
+            value: this.powerUpConfig.types[selectedType].value,
+            color: this.powerUpConfig.types[selectedType].color,
+            icon: this.powerUpConfig.types[selectedType].icon,
+            element: this.createPowerUpElement(x, y, selectedType),
+            lifetime: 5000, // 5 seconds before disappearing
+            created: Date.now()
+        };
+        
+        this.powerUps.push(powerUp);
+    }
+    
+    createPowerUpElement(x, y, type) {
+        const powerUp = document.createElement('div');
+        powerUp.className = 'power-up';
+        powerUp.style.left = x + 'px';
+        powerUp.style.top = y + 'px';
+        
+        const config = this.powerUpConfig.types[type];
+        powerUp.innerHTML = `
+            <div class="power-up-icon" style="color: ${config.color};">
+                ${config.icon}
+            </div>
+        `;
+        
+        this.gameArea.appendChild(powerUp);
+        return powerUp;
+    }
+    
+    updatePowerUps() {
+        const now = Date.now();
+        this.powerUps = this.powerUps.filter(powerUp => {
+            // Remove expired power-ups
+            if (now - powerUp.created > powerUp.lifetime) {
+                powerUp.element.remove();
+                return false;
+            }
+            
+            // Floating animation
+            const floatOffset = Math.sin((now - powerUp.created) / 200) * 5;
+            powerUp.element.style.transform = `translateY(${floatOffset}px)`;
+            
+            return true;
+        });
+    }
+    
+    checkPowerUpPickups() {
+        this.powerUps = this.powerUps.filter(powerUp => {
+            const dx = (this.playerStats.x + 30) - powerUp.x;
+            const dy = (this.playerStats.y + 30) - powerUp.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 40) { // Pickup range
+                this.collectPowerUp(powerUp);
+                powerUp.element.remove();
+                return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    collectPowerUp(powerUp) {
+        switch(powerUp.type) {
+            case 'health':
+                this.playerStats.health = Math.min(this.playerStats.maxHealth, this.playerStats.health + powerUp.value);
+                break;
+            case 'weapon':
+                this.playerStats.damage += powerUp.value;
+                break;
+            case 'speed':
+                this.playerStats.speed += powerUp.value;
+                break;
+            case 'firerate':
+                this.playerStats.fireRate = Math.max(100, this.playerStats.fireRate - powerUp.value);
+                break;
+            case 'critical':
+                this.playerStats.criticalChance = Math.min(1, this.playerStats.criticalChance + powerUp.value);
+                break;
+            case 'lifesteal':
+                this.playerStats.lifestealAmount = Math.min(1, this.playerStats.lifestealAmount + powerUp.value);
+                break;
+            case 'multishot':
+                this.playerStats.multishotCount += powerUp.value;
+                break;
+        }
+        
+        // Create pickup effect
+        this.createPowerUpEffect(powerUp.x, powerUp.y, powerUp.color);
+        
+        // Show pickup notification
+        this.showPowerUpNotification(powerUp.type);
+        
+        this.updateUI();
+    }
+    
+    createPowerUpEffect(x, y, color) {
+        const effect = document.createElement('div');
+        effect.className = 'power-up-effect';
+        effect.style.left = (x - 20) + 'px';
+        effect.style.top = (y - 20) + 'px';
+        effect.style.borderColor = color;
+        this.gameArea.appendChild(effect);
+        
+        setTimeout(() => effect.remove(), 500);
+    }
+    
+    showPowerUpNotification(type) {
+        const notification = document.createElement('div');
+        notification.className = 'power-up-notification';
+        
+        const config = this.powerUpConfig.types[type];
+        const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+        
+        notification.innerHTML = `${config.icon} ${typeName} +${config.value}`;
+        notification.style.color = config.color;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 2000);
     }
     
     addFamilyMember() {
