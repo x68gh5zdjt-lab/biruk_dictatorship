@@ -193,9 +193,6 @@ sequence to unlock a secret.
 **Created by**: Biruk's Dictatorship Development Team  
 **Enemy Design**: Quint's Secret Laboratory  
 **Story**: Biruk's Manifesto  
-**Player Character**: Biruk's LinkedIn Professional Photo  
-**Battlefield**: United States Capitol Building  
-**Audio**: Cartoon Gun Sound Effects 
 **Music Credit**: Collins, Phil "I Don't Care Anymore". Hello, I Must Be Going.  1983
 
 ---
