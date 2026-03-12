@@ -20,11 +20,12 @@ The battle for world domination begins now.
 
 ## How to Play
 
+### Click to play: [Link](https://marcusceradini.github.io/biruk_dictatorship/)
+
 ### Controls
 - **WASD** or **Arrow Keys** - Move Biruk
 - **Mouse Click** - Shoot at Phil Collins clones
 - **Tab Out** - Clears movement (prevents stuck movement)
-- [Link](https://marcusceradini.github.io/biruk_dictatorship/)
 
 ### Objective
 Play as Biruk. Hire goons. Defeat the Collins clones. Become the dictator. Or die trying. 💥
